@@ -552,6 +552,25 @@ document.addEventListener("DOMContentLoaded", () => {
             .join("")}
         </ul>
       </div>
+      <div class="share-buttons">
+        <span class="share-label">Share:</span>
+        <button class="share-button share-twitter tooltip" data-activity="${name}" data-description="${details.description.replace(/"/g, '&quot;')}" data-schedule="${formattedSchedule.replace(/"/g, '&quot;')}" title="Share on Twitter">
+          <span class="share-icon">🐦</span>
+          <span class="tooltip-text">Share on Twitter</span>
+        </button>
+        <button class="share-button share-facebook tooltip" data-activity="${name}" title="Share on Facebook">
+          <span class="share-icon">📘</span>
+          <span class="tooltip-text">Share on Facebook</span>
+        </button>
+        <button class="share-button share-email tooltip" data-activity="${name}" data-description="${details.description.replace(/"/g, '&quot;')}" data-schedule="${formattedSchedule.replace(/"/g, '&quot;')}" title="Share via Email">
+          <span class="share-icon">✉️</span>
+          <span class="tooltip-text">Share via Email</span>
+        </button>
+        <button class="share-button share-copy tooltip" data-activity="${name}" data-description="${details.description.replace(/"/g, '&quot;')}" data-schedule="${formattedSchedule.replace(/"/g, '&quot;')}" title="Copy Link">
+          <span class="share-icon">🔗</span>
+          <span class="tooltip-text">Copy Link</span>
+        </button>
+      </div>
       <div class="activity-card-actions">
         ${
           currentUser
@@ -575,6 +594,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const deleteButtons = activityCard.querySelectorAll(".delete-participant");
     deleteButtons.forEach((button) => {
       button.addEventListener("click", handleUnregister);
+    });
+
+    // Add click handlers for share buttons
+    const shareButtons = activityCard.querySelectorAll(".share-button");
+    shareButtons.forEach((button) => {
+      button.addEventListener("click", handleShare);
     });
 
     // Add click handler for register button (only when authenticated)
@@ -673,6 +698,67 @@ document.addEventListener("DOMContentLoaded", () => {
       closeRegistrationModalHandler();
     }
   });
+
+  // Handle social sharing
+  function handleShare(event) {
+    const button = event.currentTarget;
+    const activity = button.dataset.activity;
+    const description = button.dataset.description || "";
+    const schedule = button.dataset.schedule || "";
+    
+    // Get the current page URL
+    const baseUrl = window.location.origin + window.location.pathname;
+    const shareUrl = baseUrl;
+    
+    // Create share text
+    const shareText = `Check out ${activity} at Mergington High School! ${description} Schedule: ${schedule}`;
+    
+    // Determine which share button was clicked
+    if (button.classList.contains("share-twitter")) {
+      // Share on Twitter
+      const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+      window.open(twitterUrl, '_blank', 'width=600,height=400');
+    } else if (button.classList.contains("share-facebook")) {
+      // Share on Facebook
+      const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+      window.open(facebookUrl, '_blank', 'width=600,height=400');
+    } else if (button.classList.contains("share-email")) {
+      // Share via Email
+      const subject = `Check out ${activity} at Mergington High School`;
+      const body = `I thought you might be interested in this activity:\n\n${activity}\n${description}\n\nSchedule: ${schedule}\n\nView more details at: ${shareUrl}`;
+      const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.location.href = mailtoUrl;
+    } else if (button.classList.contains("share-copy")) {
+      // Copy link to clipboard
+      const textToCopy = `${activity} at Mergington High School\n${description}\n\nSchedule: ${schedule}\n\nLearn more: ${shareUrl}`;
+      
+      // Use the Clipboard API if available
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textToCopy).then(() => {
+          showMessage("Activity details copied to clipboard!", "success");
+        }).catch((err) => {
+          console.error("Failed to copy:", err);
+          showMessage("Failed to copy to clipboard", "error");
+        });
+      } else {
+        // Fallback for older browsers
+        const textArea = document.createElement("textarea");
+        textArea.value = textToCopy;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          showMessage("Activity details copied to clipboard!", "success");
+        } catch (err) {
+          console.error("Failed to copy:", err);
+          showMessage("Failed to copy to clipboard", "error");
+        }
+        document.body.removeChild(textArea);
+      }
+    }
+  }
 
   // Create and show confirmation dialog
   function showConfirmationDialog(message, confirmCallback) {
